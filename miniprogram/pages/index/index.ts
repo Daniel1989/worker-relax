@@ -18,15 +18,23 @@ Component({
 
   lifetimes: {
     attached() {
-      wx.request({
-        url: "http://192.168.36.70:5555/random",
-        success:  (res) => {
-          console.log(res.data)
-          this.setData({
-            ip: res.data
-          })
-        }
-      })
+      // 登录
+    wx.login({
+      success: res => {
+        // 发送 res.code 到后台换取 openId, sessionKey, unionId
+        console.log(res)
+        wx.request({
+          url: "http://127.0.0.1:8000/mini/?js_code="+res.code,
+          success:  (res) => {
+            this.setData({
+              ip: res.data.openid,
+              session_key: res.data.session_key
+            })
+          }
+        })
+      },
+    })
+      
     }
   },
   
