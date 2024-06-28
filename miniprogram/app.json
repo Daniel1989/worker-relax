@@ -1,11 +1,16 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/logs/logs"
+    "pages/setup/create",
+    "pages/setup/join",
+    "pages/room/waiting"
   ],
   "window": {
-    "navigationBarTextStyle": "black",
-    "navigationStyle": "custom"
+    "backgroundColor": "#F6F6F6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#F6F6F6",
+    "navigationBarTitleText": "一夜狼",
+    "navigationBarTextStyle": "black"
   },
   "style": "v2",
   "rendererOptions": {

@@ -1,81 +1,90 @@
-// index.ts
-// 获取应用实例
-const app = getApp<IAppOption>()
-const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+import { request } from "../../utils/util";
 
-Component({
+//index.js
+const app = getApp();
+
+Page({
   data: {
-    motto: 'Hello World',
-    userInfo: {
-      avatarUrl: defaultAvatarUrl,
-      nickName: '',
-    },
-    hasUserInfo: false,
-    canIUseGetUserProfile: wx.canIUse('getUserProfile'),
-    // canIUseNicknameComp: wx.canIUse('input.type.nickname'),
-    ip: "",
+    avatarUrl: './user-unlogin.png',
+    userInfo: {},
+    logged: false,
+    takeSession: false,
+    requestResult: '',
+    readyToCreateOrJoin: false,
   },
 
-  lifetimes: {
-    attached() {
-      // 登录
-    wx.login({
+  onLoad: function() {
+    // 获取用户信息
+    wx.getSetting({
       success: res => {
-        // 发送 res.code 到后台换取 openId, sessionKey, unionId
-        console.log(res)
-        wx.request({
-          url: "http://127.0.0.1:8000/mini/?js_code="+res.code,
-          success:  (res) => {
-            this.setData({
-              ip: res.data.openid,
-              session_key: res.data.session_key
-            })
-          }
-        })
-      },
-    })
-      
-    }
-  },
-  
-  methods: {
-    
-    // 事件处理函数
-    bindViewTap() {
-      wx.navigateTo({
-        url: '../logs/logs',
-      })
-    },
-    
-    onChooseAvatar(e: any) {
-      const { avatarUrl } = e.detail
-      const { nickName } = this.data.userInfo
-      this.setData({
-        "userInfo.avatarUrl": avatarUrl,
-        hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
-      })
-    },
-    onInputChange(e: any) {
-      const nickName = e.detail.value
-      const { avatarUrl } = this.data.userInfo
-      this.setData({
-        "userInfo.nickName": nickName,
-        hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
-      })
-    },
-    getUserProfile() {
-      
-      // 推荐使用wx.getUserProfile获取用户信息，开发者每次通过该接口获取用户个人信息均需用户确认，开发者妥善保管用户快速填写的头像昵称，避免重复弹窗
-      wx.getUserProfile({
-        desc: '展示用户信息', // 声明获取用户个人信息后的用途，后续会展示在弹窗中，请谨慎填写
-        success: (res) => {
-          console.log(res)
-          this.setData({
-            userInfo: res.userInfo,
-            hasUserInfo: true
+        if (res.authSetting['scope.userInfo']) {
+          // 已经授权，可以直接调用 getUserInfo 获取头像昵称，不会弹框
+          wx.getUserInfo({
+            success: res => {
+              this.setData({
+                avatarUrl: res.userInfo.avatarUrl,
+                userInfo: res.userInfo
+              })
+            }
           })
         }
-      })
-    },
+      }
+    })
   },
+
+  onGetUserInfo: function(e:any) {
+    if (!this.data.logged && e.detail.userInfo) {
+      this.setData({
+        logged: true,
+        avatarUrl: e.detail.userInfo.avatarUrl,
+        userInfo: e.detail.userInfo
+      })
+      app.globalData.userInfo = e.detail.userInfo;
+    }
+    this.getOpenId();
+  },
+
+  getOpenId: function() {
+    // 调用云函数
+    wx.login({
+      success: info => {
+        request({
+          path: '/login?js_code='+info.code,
+          success: (res) => {
+            app.globalData.openid = res.result.openid
+            this.registerPlayer()
+          },
+          fail: err => {
+            console.error('[云函数] [login] 调用失败', err);
+            wx.showToast({
+              title: '登陆失败',
+            });
+          }
+        })
+      }
+    })
+    
+  },
+
+  registerPlayer: function() { 
+    const _this = this;
+    request({
+      path: '/registerPlayer',
+      method: 'POST',
+      data: {
+        userInfo: {
+          openId: app.globalData.openid,
+          ..._this.data.userInfo,
+        }
+      },
+      complete: () => {
+        wx.showToast({
+          title: '登陆成功',
+        });
+        this.setData({
+          readyToCreateOrJoin: true,
+        });
+      }
+    })
+  }
 })
