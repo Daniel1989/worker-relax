@@ -1,0 +1,154 @@
+// 支持es4语法
+var convert = {
+  convertFromEnglishToFull: function (value) {
+    switch (value) {
+      case "wereWolf": {
+        return "狼人[" + value + "]";
+      }
+      case "minion": {
+        return "替罪羊[" + value + "]";
+      }
+      case "alphaWolf": {
+        return "头狼[" + value + "]";
+      }
+      case "mysticWolf": {
+        return "狼预言家[" + value + "]";
+      }
+      case  "seer": {
+        return "预言家[" + value + "]";
+      }
+      case "apprenticeSeer": {
+        return "学徒预言家[" + value + "]";
+      }
+      case "witch": {
+        return "女巫[" + value + "]";
+      }
+      case "revealer": {
+        return "揭示者[" + value + "]";
+      }
+      case "robber": {
+        return "强盗[" + value + "]";
+      }
+      case "troublemaker": {
+        return "捣蛋鬼[" + value + "]";
+      }
+      case "insomniac": {
+        return "失眠者[" + value + "]";
+      }
+      case "drunk": {
+        return "酒鬼[" + value + "]";
+      }
+      case "mason": {
+        return "守夜人[" + value + "]";
+      }
+      case "tanner": {
+        return "皮匠[" + value + "]";
+      }
+      case "villager": {
+        return "村民[" + value + "]";
+      }
+    }
+    return "出错啦"
+  },
+  convertFromEnglishToTask: function(value) {
+    switch (value) {
+      case "wereWolf": {
+        return "互相睁眼确认身份"
+      }
+      case "minion": {
+        return "查看场上所有狼人";
+      }
+      case "alphaWolf": {
+        return "把场上一名玩家变成普通狼人";
+      }
+      case "mysticWolf": {
+        return "查看场上一名玩家身份";
+      }
+      case "seer": {
+        return "查看场上一名玩家身份";
+      }
+      case "apprenticeSeer": {
+        return "查看一张底牌";
+      }
+      case "witch": {
+        return "查看一张底牌并将它与任意一名玩家的卡牌交换";
+      }
+      case "revealer": {
+        return "翻开一名玩家卡牌，如果是狼则翻回去";
+      }
+      case "robber": {
+        return "交换自己与任意一名玩家卡牌，可以看到新卡牌信息";
+      }
+      case "troublemaker": {
+        return "交换任意二名玩家卡牌";
+      }
+      case "insomniac": {
+        return "天亮前睁眼查看自己的卡牌";
+      }
+      case "drunk": {
+        return "交换自己的卡牌与一张底牌";
+      }
+      case "mason": {
+        return "互相睁眼确认身份";
+      }
+    }
+  },
+  convertToGroup: function(value) {
+    if (value == "mysticWolf" || value == "alphaWolf") {
+      return "wereWolf"
+    }
+    else return value
+  },
+  convertToRoleOrder: function (roles, currentRole) {
+
+    if (roles == null || roles.length == 0) {
+      return
+    }
+
+    var ACTION_ORDER = [
+      "wereWolf",
+      "alphaWolf",
+      "mysticWolf",
+      "minion",
+      "mason",
+      "seer",
+      "apprenticeSeer",
+      "robber",
+      "witch",
+      "troublemaker",
+      "drunk",
+      "insomniac",
+      "revealer"
+    ];
+
+    var orders = [], currentOrder = 0
+    for (var i = 0; i < ACTION_ORDER.length; i++) {
+      if (roles[ACTION_ORDER[i]] > 0) {
+        orders.push({
+          role: ACTION_ORDER[i],
+          roleName: convert.convertFromEnglishToFull(ACTION_ORDER[i]),
+          number: roles[ACTION_ORDER[i]],
+          task: convert.convertFromEnglishToTask(ACTION_ORDER[i]),
+        })
+      }
+    }
+
+    for (var i = 0; i < orders.length; i++) {
+      if (currentRole == orders[i].role) {
+        currentOrder = i
+      }
+    }
+
+    return {
+      orders: orders,
+      currentOrder: currentOrder,
+    }
+  }
+}
+
+// 导出对外暴露的属性
+module.exports = {
+  convertFull: convert.convertFromEnglishToFull,
+  convertGroup: convert.convertToGroup,
+  convertRoleOrder: convert.convertToRoleOrder,
+}

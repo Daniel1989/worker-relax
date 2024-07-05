@@ -1,2 +1,137 @@
 <!--pages/room/waiting.wxml-->
-<text>pages/room/waiting.wxml</text>
+<wxs module="convert" src="./waiting.wxs"></wxs>
+
+<view style="position:fixed; background: white; width: 100%; z-index: 1">
+  <text style="padding:8px; float:left; font-weight: 700; color: #555">房间号: {{room.roomNumber}}\n</text>
+  <button style="padding:8x; width:10px; float:right" wx:if="{{room.game.status != 'waiting'}}" bindtap="toggleRight"><i-icon type="activity_fill" color ="#7497ce" size="20"/></button>
+</view>
+
+<i-drawer mode="right" visible="{{showRight}}" bind:close="toggleRight">
+    <view class="demo-container">
+      <i-steps current="{{convert.convertRoleOrder(room.roleSettings.totalRoles, currentRole).currentOrder}}" direction="vertical">
+        <view wx:for="{{convert.convertRoleOrder(room.roleSettings.totalRoles, currentRole).orders}}" 
+        wx:key="index"
+        wx:for-index="index" wx:for-item="item">
+            <i-step>
+              <view slot="title">
+                {{item.roleName}} ({{item.number}})
+              </view>
+              <view slot="content">
+                {{item.task}}
+              </view>
+          </i-step>
+        </view>
+        <view wx:if="{{room.roleSettings.totalRoles['villager'] > 0}}" style="margin-left: 50px; margin-bottom: 30px">
+          <text class="step-item-title">村民[villager] ({{room.roleSettings.totalRoles['villager']}})\n</text>
+          <text class="step-item-content">夜晚没有行动</text>
+        </view>
+        <view wx:if="{{room.roleSettings.totalRoles['tanner'] > 0}}" style="margin-left: 50px; margin-bottom: 30px">
+          <text class="step-item-title">皮匠[tanner] ({{room.roleSettings.totalRoles['tanner']}})\n</text>
+           <text class="step-item-content">夜晚没有行动</text>
+        </view>
+        <view style="margin-left: 50px; margin-bottom: 30px">
+          <text class="step-item-content">*注意： 如果场上只有一头狼，它可以查看一张底牌</text>
+        </view>
+      </i-steps>
+    </view>
+</i-drawer>
+
+<i-grid>
+  <text>\n</text>
+  <view wx:for="{{seats}}" wx:for-index="index" wx:key="index" wx:for-item="item">
+    <i-row>
+      <view wx:for="{{seats[index]}}" 
+      wx:key="index"
+      wx:for-index="index2" wx:for-item="item" style="text-align: center" bindtap="onSelect" data-index="{{index * 3 + index2}}">
+        <i-grid-item>
+          <view class="selected-{{selectedPlayers[index * 3 + index2]}}" style="padding: 10%;" 
+          hidden="{{room.totalPlayer <= index * 3 + index2}}">
+          <i-badge count="{{seats[index][index2].isReady && room.game.status=='waiting' ? 1 : 0}}">
+            <i-avatar src="{{seats[index][index2].avatarUrl}}" size="large" shape="square" ></i-avatar>
+          </i-badge>
+            <text class="userinfo-nickname">\n{{(seats[index][index2].nickName || "空座位") +'('+ (index * 3 + index2)+')'}}</text>
+          </view>
+        </i-grid-item>
+      </view>
+    </i-row> 
+  </view>
+</i-grid>
+
+<view wx:if="{{room.game.status == 'waiting'}}" style="text-align: center">
+  <text>\n房间号【{{room.roomNumber}}】| 房间总人数: {{room.totalPlayer}}</text>
+  <view>
+    <text>\n</text>
+    <button type="default" bindtap="onStart" hidden="{{myOpenId != room._openid}}" disabled="{{!enableStart || room.game.status != 'waiting'}}">开始游戏</button>
+    <button type="default" bindtap="onSetReady" hidden="{{myOpenId == room._openid}}" disabled="{{isReady}}">{{isReady == true ? '已准备' : '准备'}}</button>
+    </view>
+</view>
+<view wx:else> 
+  <i-grid>
+    <i-row>
+      <view style="text-align: center" bindtap="onSelect" data-index="{{-1}}">
+        <i-grid-item>
+          <view class="selected-{{selectedGraveyard[0]}}" style="padding: 10%;">
+            <i-avatar src="" size="large" shape="square" ></i-avatar>
+            <text class="userinfo-nickname">\n底牌</text>
+          </view>
+        </i-grid-item>
+      </view>
+      <view style="text-align: center" bindtap="onSelect" data-index="{{-2}}">
+        <i-grid-item>
+          <view class="selected-{{selectedGraveyard[1]}}" style="padding: 10%;">
+            <i-avatar src="" size="large" shape="square" ></i-avatar>
+            <text class="userinfo-nickname">\n底牌</text>
+          </view>
+        </i-grid-item>
+      </view>
+      <view style="text-align: center" bindtap="onSelect" data-index="{{-3}}">
+        <i-grid-item>
+          <view class="selected-{{selectedGraveyard[2]}}" style="padding: 10%;">
+            <i-avatar src="" size="large" shape="square" ></i-avatar>
+            <text class="userinfo-nickname">\n底牌</text>
+          </view>
+        </i-grid-item>
+      </view>
+    </i-row> 
+  </i-grid>
+
+  <view class="role">
+    <text >你本局游戏的初始角色是: \n</text>
+    <text class="role-text">{{convert.convertFull(myRole)}}</text>
+  </view>
+</view>
+
+<view wx:if="{{room.game.status == 'gaming'}}" class="hint">
+    <text class="role-text">{{convert.convertFull(currentRole)}}</text> 
+    <text> 正在行动！</text>
+  <view wx:if="{{myRole == currentRole || convert.convertGroup(myRole) == currentRole}}" style="text-align: center; margin-left: 10%; margin-right:10%" > 
+    <text class="hint-text">{{currentStep}}</text>
+    <button disabled="{{actioned}}" type="default" bindtap="onAction" style="margin-top: 5%">确定</button>
+  </view>
+</view>
+
+<view wx:if="{{room.game.status == 'voting'}}" class="hint">
+  <text class="hint-text">{{currentStep}}</text>
+  <button type="default" disabled="{{voted}}" bindtap="onVote" style="margin-top: 5%">{{voted == true ? '已投票' : '投票'}}</button>
+</view>
+
+<view wx:if="{{room.game.status == 'results'}}" class="hint">
+  <text class="role-text" style="margin-bottom: 10%">{{winner}}</text><text>赢啦!\n</text>
+  <view wx:for="{{results}}" wx:for-index="index" 
+  wx:key="index"
+  wx:for-item="item" style="margin-top: 2%">
+    <text class="hint-text">{{item.voter}}</text>
+    <text> 投给了 </text>
+    <text class="hint-text">{{item.player}}</text>
+  </view>
+  <view wx:for="{{room.game.roleAssignment.playerRoles}}" wx:for-index="index" wx:for-item="item" 
+  wx:key="index"
+  style="margin-top: 2%">
+    <text>{{index}}</text>
+    <text>号当前角色是 </text>
+    <text class="role-text">{{convert.convertFull(item.current)}}</text>
+  </view>
+    <button type="default" bindtap="onRestart" style="margin-top: 5%">再来一局</button>
+</view>
+
+<i-message id="message" />
