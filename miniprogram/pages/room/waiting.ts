@@ -526,6 +526,45 @@ Page({
     )
   },
 
+  onVote: function() {
+    let _this = this
+    let selectedPlayers = []
+    let selectedGraveyard = []
+    for (let i in this.data.selectedPlayers) {
+      if (this.data.selectedPlayers[i]) {
+        selectedPlayers.push(i)
+      }
+    }
+    for (let i = 0; i < 3; i++) {
+      if (this.data.selectedGraveyard[i]) {
+        selectedGraveyard.push(i)
+      }
+    }
+
+    if (selectedPlayers.length + selectedGraveyard.length != 1) {
+      this.handleAlert("请（只）选择一个玩家或一张底牌", 'warning')
+    } else {
+      const selectedPlayer = selectedPlayers.length > 0 ? selectedPlayers[0] : -1;
+
+      request({
+        path: '/vote',
+        data: {
+          roomId: _this.data.room._id,
+          seatNumber: _this.data.mySeat,
+          selectedPlayer: selectedPlayer,
+          userInfo: app.globalData.userInfo
+        },
+        success: res => {
+          console.log(res)
+        }
+      })
+      _this.setData({
+        voted: true
+      })
+    }
+
+  },
+
   delay: function(milSec: number) {
     return new Promise(resolve => {
       setTimeout(resolve, milSec)
