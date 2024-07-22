@@ -506,8 +506,30 @@ Page({
   },
 
   updateDatabase: function(game:any, role:any, time:any) {
-    console.log(game, role, time)
     // TODO 0706, 这里要根据行动，更新数据库
+    this.delay(time).then(
+      (_) => {
+        var _this = this
+        request({
+          path: '/takeAction',
+          data: {
+            roomId: _this.data.room._id,
+            game: game,
+            myRole: role,
+            userInfo: app.globalData.userInfo
+          },
+          success: (res) => {
+            console.log(res)
+          }
+        })
+      }
+    )
+  },
+
+  delay: function(milSec: number) {
+    return new Promise(resolve => {
+      setTimeout(resolve, milSec)
+    })
   },
 
   convertFull: function(value: any) {
