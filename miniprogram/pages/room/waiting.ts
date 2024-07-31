@@ -554,11 +554,10 @@ Page({
           selectedPlayer: selectedPlayer,
           userInfo: app.globalData.userInfo
         },
-        success: (res) => {
+        success: res => {
           console.log(res)
         }
       })
-
       _this.setData({
         voted: true
       })
