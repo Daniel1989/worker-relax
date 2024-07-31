@@ -526,6 +526,130 @@ Page({
     )
   },
 
+  onVote: function() {
+    let _this = this
+
+    let selectedPlayers = []
+    let selectedGraveyard = []
+    for (let i in this.data.selectedPlayers) {
+      if (this.data.selectedPlayers[i]) {
+        selectedPlayers.push(i)
+      }
+    }
+    for (let i = 0; i < 3; i++) {
+      if (this.data.selectedGraveyard[i]) {
+        selectedGraveyard.push(i)
+      }
+    }
+
+    if (selectedPlayers.length + selectedGraveyard.length != 1) {
+      this.handleAlert("请（只）选择一个玩家或一张底牌", 'warning')
+    } else {
+      const selectedPlayer = selectedPlayers.length > 0 ? selectedPlayers[0] : -1;
+      request({
+        path: '/vote',
+        data: {
+          roomId: _this.data.room._id,
+          seatNumber: _this.data.mySeat,
+          selectedPlayer: selectedPlayer,
+          userInfo: app.globalData.userInfo
+        },
+        success: (res) => {
+          console.log(res)
+        }
+      })
+
+      _this.setData({
+        voted: true
+      })
+    }
+
+  },
+
+  showResult: function (game:any) {
+    let results:any = []
+
+    for (let i = 0; i < game.results.playerResults.length; i++) {
+      if (game.results.playerResults[i].length > 0) {
+        let voter = ""
+        for (let j = 0; j < game.results.playerResults[i].length; j++) {
+          voter += game.results.playerResults[i][j] + "号 "
+        }
+        results.push({
+          player: i + "号玩家",
+          voter: voter
+        })
+      }
+    }
+
+    let voter = ""
+    for (let i = 0; i < game.results.graveyardResults.length; i++) {
+      voter += game.results.graveyardResults[i] + "号 "
+    }
+    if (voter == "") {
+      voter = "没有人"
+    }
+    results.push({
+      player: "墓地",
+      voter: voter
+    })
+
+    this.setData({
+      results: results,
+      winner: game.results.winner
+    })
+
+  },
+
+  /**
+   * 再来一局
+   */
+  onRestart: function() {
+    var roomId = this.data.room._id
+    request({
+      path: '/updateRoom',
+      data: {
+        roomId,
+        game: {
+          status: "waiting",
+          revealer: {},
+          results: {
+            votedOpenIds: [],
+            votes: [],
+          },
+        }
+      }
+    })
+  },
+
+  /**
+   * 初始化所有数据
+   */
+  onInit: function(room:any) {
+    this.setData({
+      room: room,
+      enableStart: false,
+      myRole: "",
+      currentRole: "",
+      selectedPlayers: [],
+      selectedGraveyard: [],
+      currentStep: "",
+      simulated: [],
+      showRight: false,
+      actioned: false,
+      // 女巫
+      round: 0,
+      lastSelected: null,
+      // 狼人
+      onlyWolf: false,
+      // 结束
+      voted: false,
+      results: [],
+      winner: "",
+    })
+    app.globalData.actioned = false;
+  },
+
   delay: function(milSec: number) {
     return new Promise(resolve => {
       setTimeout(resolve, milSec)
